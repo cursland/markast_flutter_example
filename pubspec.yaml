@@ -12,6 +12,11 @@ dependencies:
   cupertino_icons: ^1.0.8
   markast:
     path: ../markast_flutter
+  url_launcher: ^6.3.1
+  # Direct dep so Flutter bundles syntax_highlight's grammar / theme JSON
+  # assets — transitive bundling via the path-imported `markast` package is
+  # unreliable. Required by the TextMate / VSCode highlight backend.
+  syntax_highlight: ^0.5.0
 
 dev_dependencies:
   flutter_test:
@@ -20,3 +25,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/document.json

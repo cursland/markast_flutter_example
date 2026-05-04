@@ -1,62 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:markast/markast.dart';
 
-void main() {
-  runApp(const App());
+import 'demo_page.dart';
+
+/// App bootstrap.
+///
+/// Motor A (re_highlight) is synchronous and built into [Markast]; nothing
+/// to load here. Motor B (TextMate / VSCode-grade) needs an async warm-up
+/// before [runApp] — we pre-load **both** the dark and light variants so
+/// switching between them at runtime is instant.
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final textMateDark = await MarkastTextMateHighlight.create(
+    theme: await MarkastTextMateThemes.darkPlus(),
+  );
+  final textMateLight = await MarkastTextMateHighlight.create(
+    theme: await MarkastTextMateThemes.lightPlus(),
+  );
+
+  runApp(App(textMateDark: textMateDark, textMateLight: textMateLight));
 }
 
-final _markast = Markast();
+/// Which highlight backend the demo is currently using.
+enum HighlightEngine { reHighlight, textMate }
 
-const _doc = {
-  'type': 'document',
-  'children': [
-    {
-      'type': 'heading',
-      'level': 1,
-      'children': [
-        {'type': 'text', 'value': 'Hello, markast!'},
-      ],
-    },
-    {
-      'type': 'paragraph',
-      'children': [
-        {'type': 'text', 'value': 'This is a hello world rendered from a '},
-        {
-          'type': 'bold',
-          'children': [
-            {'type': 'text', 'value': 'typed JSON AST'},
-          ],
-        },
-        {'type': 'text', 'value': ' using the markast Flutter package.'},
-      ],
-    },
-    {
-      'type': 'code_block',
-      'language': 'dart',
-      'value': '// Render a markast AST document\n'
-          'String greet(String name, {int times = 1}) {\n'
-          "  final message = 'Hello, \$name!';\n"
-          '  for (var i = 0; i < times; i++) {\n'
-          '    print(message);\n'
-          '  }\n'
-          '  return message;\n'
-          '}',
-    },
-  ],
-};
+class App extends StatefulWidget {
+  const App({
+    super.key,
+    required this.textMateDark,
+    required this.textMateLight,
+  });
 
-class App extends StatelessWidget {
-  const App({super.key});
+  final MarkastHighlighter textMateDark;
+  final MarkastHighlighter textMateLight;
+
+  @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  ThemeMode _mode = ThemeMode.light;
+  HighlightEngine _engine = HighlightEngine.reHighlight;
+
+  void _toggleTheme() {
+    setState(() {
+      _mode = _mode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
+
+  void _toggleEngine() {
+    setState(() {
+      _engine = _engine == HighlightEngine.reHighlight
+          ? HighlightEngine.textMate
+          : HighlightEngine.reHighlight;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'markast example',
-      home: Scaffold(
-        appBar: AppBar(title: const Text('markast example')),
-        body: SingleChildScrollView(
-          child: _markast.buildDocument(context, _doc),
-        ),
+      title: 'markast Flutter',
+      debugShowCheckedModeBanner: false,
+      themeMode: _mode,
+      theme: ThemeData.light(useMaterial3: true),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+      home: DemoPage(
+        onToggleTheme: _toggleTheme,
+        onToggleEngine: _toggleEngine,
+        themeMode: _mode,
+        engine: _engine,
+        textMateDark: widget.textMateDark,
+        textMateLight: widget.textMateLight,
       ),
     );
   }

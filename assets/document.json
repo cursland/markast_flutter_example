@@ -1,0 +1,6469 @@
+{
+  "type": "document",
+  "version": "1.0",
+  "warnings": [],
+  "children": [
+    {
+      "type": "heading",
+      "level": 1,
+      "children": [
+        {
+          "type": "text",
+          "value": "markast Flutter — Librería de Renderizado de AST"
+        }
+      ],
+      "id": "markast-flutter-libreria-de-renderizado-de-ast"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Convierte un árbol de sintaxis abstracta (AST) en JSON a "
+        },
+        {
+          "type": "bold",
+          "children": [
+            {
+              "type": "text",
+              "value": "widgets Flutter nativos"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "value": " con soporte completo para temas personalizados, resaltado de sintaxis, renderers propios y contenedores widget. Sin WebView, sin HTML, sin CSS — renderizado 100 % nativo."
+        },
+        {
+          "type": "footnote_ref",
+          "label": "1"
+        }
+      ]
+    },
+    {
+      "type": "blockquote",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "value": "⚡ \"Escribe el contenido una vez, en Markdown. Renderiza en cualquier plataforma Flutter con control total sobre cada pixel del resultado.\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Instalación"
+        }
+      ],
+      "id": "instalacion"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Agrega la dependencia en tu "
+        },
+        {
+          "type": "code_inline",
+          "value": "pubspec.yaml"
+        },
+        {
+          "type": "text",
+          "value": ":"
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "yaml",
+      "value": "dependencies:\n  markast:\n    path: ../markast_flutter   # ruta local al paquete"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "O bien publica el paquete y refiérelo por versión:"
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "yaml",
+      "value": "dependencies:\n  markast: ^1.0.0"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Inicio Rápido"
+        }
+      ],
+      "id": "inicio-rapido"
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "import 'dart:convert';\nimport 'package:flutter/material.dart';\nimport 'package:flutter/services.dart';\nimport 'package:markast/markast.dart';\n\nclass DocumentPage extends StatefulWidget {\n  const DocumentPage({super.key});\n\n  @override\n  State<DocumentPage> createState() => _DocumentPageState();\n}\n\nclass _DocumentPageState extends State<DocumentPage> {\n  late Future<Map<String, dynamic>> _doc;\n\n  @override\n  void initState() {\n    super.initState();\n    _doc = _load('assets/document.json');\n  }\n\n  Future<Map<String, dynamic>> _load(String path) async {\n    final raw = await rootBundle.loadString(path);\n    return jsonDecode(raw) as Map<String, dynamic>;\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    final markast = Markast();\n    return FutureBuilder<Map<String, dynamic>>(\n      future: _doc,\n      builder: (context, snapshot) {\n        if (!snapshot.hasData) return const CircularProgressIndicator();\n        return SingleChildScrollView(\n          child: markast.buildDocument(context, snapshot.data!),\n        );\n      },\n    );\n  }\n}"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Arquitectura"
+        }
+      ],
+      "id": "arquitectura"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "markast Flutter se compone de cuatro capas principales:"
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "children": [
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "bold",
+              "children": [
+                {
+                  "type": "code_inline",
+                  "value": "Markast"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": " — punto de entrada; despacha nodos a sus renderers"
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "bold",
+              "children": [
+                {
+                  "type": "code_inline",
+                  "value": "MarkastTheme"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": " — contiene "
+            },
+            {
+              "type": "italic",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "todos"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": " los valores visuales como primitivas Flutter"
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "bold",
+              "children": [
+                {
+                  "type": "code_inline",
+                  "value": "NodeRegistry"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": " — mapa de "
+            },
+            {
+              "type": "code_inline",
+              "value": "tipo → BlockRenderer | InlineRenderer"
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "bold",
+              "children": [
+                {
+                  "type": "code_inline",
+                  "value": "WidgetRegistry"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": " — mapa de "
+            },
+            {
+              "type": "code_inline",
+              "value": "nombre → WidgetNodeRenderer"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Cada renderer recibe un "
+        },
+        {
+          "type": "code_inline",
+          "value": "RenderContext"
+        },
+        {
+          "type": "text",
+          "value": " con acceso al tema, al "
+        },
+        {
+          "type": "code_inline",
+          "value": "Markast"
+        },
+        {
+          "type": "text",
+          "value": " padre y a callbacks opcionales ("
+        },
+        {
+          "type": "code_inline",
+          "value": "onLinkTap"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "imageBuilder"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "videoBuilder"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "onCodeCopy"
+        },
+        {
+          "type": "text",
+          "value": ")."
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Instanciación de "
+        },
+        {
+          "type": "code_inline",
+          "value": "Markast"
+        }
+      ],
+      "id": "instanciacion-de-markast"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Constructor estándar"
+        }
+      ],
+      "id": "constructor-estandar"
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "// Pre-cargado con todos los renderers oficiales\nfinal markast = Markast();"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Con tema explícito (reemplaza el tema completo)"
+        }
+      ],
+      "id": "con-tema-explicito-reemplaza-el-tema-completo"
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "final markast = Markast(theme: miTema);"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Con modificador de tema (ajuste sobre el tema base)"
+        }
+      ],
+      "id": "con-modificador-de-tema-ajuste-sobre-el-tema-base"
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "final markast = Markast(\n  themeModifier: (base) => base.copyWith(\n    blockSpacing: 24,\n    listBulletMarker: '▸',\n  ),\n);"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Sin renderers (para un takeover completo)"
+        }
+      ],
+      "id": "sin-renderers-para-un-takeover-completo"
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "final markast = Markast.empty();\nmarkast.registerBlock(MiHeadingRenderer());\nmarkast.registerInline(MiLinkRenderer());"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Registro de Renderers"
+        }
+      ],
+      "id": "registro-de-renderers"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Una vez instanciado, extiende markast con tus propios renderers:"
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "// Renderer de bloque (reemplaza el oficial si el tipo ya existe)\nmarkast.registerBlock(FancyHeadingNodeRenderer());\n\n// Renderer de inline\nmarkast.registerInline(MiCustomInlineRenderer());\n\n// Renderer de widget (para nodos :::nombre_widget)\nmarkast.registerWidget(YoutubeWidgetRenderer());"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Renderizado del Documento"
+        }
+      ],
+      "id": "renderizado-del-documento"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "code_inline",
+          "value": "buildDocument"
+        },
+        {
+          "type": "text",
+          "value": " es el único método que necesitas en el árbol de widgets:"
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "Widget build(BuildContext context) {\n  return markast.buildDocument(\n    context,\n    jsonAst,           // Map<String, dynamic> del AST JSON\n    onLinkTap: (url, title) => launchUrl(Uri.parse(url)),\n    imageBuilder: null,  // MarkastImageBuilder? — fábrica de imágenes custom\n    videoBuilder: null,  // MarkastVideoBuilder? — fábrica de vídeos custom\n    onCodeCopy: (code) => Clipboard.setData(ClipboardData(text: code)),\n  );\n}"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "MarkastTheme — Sistema de Temas"
+        }
+      ],
+      "id": "markasttheme-sistema-de-temas"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "code_inline",
+          "value": "MarkastTheme"
+        },
+        {
+          "type": "text",
+          "value": " extiende "
+        },
+        {
+          "type": "code_inline",
+          "value": "ThemeExtension<MarkastTheme>"
+        },
+        {
+          "type": "text",
+          "value": ", por lo que puedes inyectarlo a través de "
+        },
+        {
+          "type": "code_inline",
+          "value": "ThemeData.extensions"
+        },
+        {
+          "type": "text",
+          "value": " "
+        },
+        {
+          "type": "italic",
+          "children": [
+            {
+              "type": "text",
+              "value": "o"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "value": " pasarlo directamente a "
+        },
+        {
+          "type": "code_inline",
+          "value": "Markast(theme: ...)"
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Construcción de un tema completo"
+        }
+      ],
+      "id": "construccion-de-un-tema-completo"
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "final tema = MarkastTheme(\n  // ── Layout ───────────────────────────────────────────────────\n  maxContentWidth:       720,\n  documentPadding:       const EdgeInsets.fromLTRB(20, 16, 20, 32),\n  compactDocumentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 28),\n  wideDocumentPadding:   const EdgeInsets.fromLTRB(24, 24, 24, 48),\n  compactBreakpoint:     600,\n  wideBreakpoint:        1024,\n  blockSpacing:          16,\n\n  // ── Cuerpo ───────────────────────────────────────────────────\n  bodyTextStyle: const TextStyle(\n    fontFamily: 'Inter',\n    fontSize:   16.5,\n    height:     1.65,\n    color:      Color(0xFF1A1B25),\n  ),\n\n  // ── Encabezados ──────────────────────────────────────────────\n  h1TextStyle: const TextStyle(fontSize: 36, fontWeight: FontWeight.w800),\n  h2TextStyle: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),\n  h3TextStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),\n  h4TextStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),\n  h5TextStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),\n  h6TextStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),\n  headingPadding: const EdgeInsets.only(top: 20, bottom: 8),\n\n  // ── Inline ───────────────────────────────────────────────────\n  linkTextStyle: const TextStyle(\n    color:      Color(0xFF6D52FF),\n    decoration: TextDecoration.underline,\n  ),\n  codeInlineTextStyle: const TextStyle(\n    fontFamily: 'JetBrainsMono',\n    color:      Color(0xFF4A35C8),\n    fontSize:   14,\n  ),\n  codeInlineDecoration: BoxDecoration(\n    color:        const Color(0xFFEEEBFF),\n    borderRadius: BorderRadius.circular(4),\n  ),\n  footnoteRefTextStyle: const TextStyle(\n    color:        Color(0xFF6D52FF),\n    fontFeatures: [FontFeature.superscripts()],\n  ),\n  unknownInlineTextStyle: const TextStyle(color: Color(0xFFE53E3E)),\n\n  // ── Callouts ─────────────────────────────────────────────────\n  calloutInfo: (\n    icon:       Icons.info_outline,\n    iconColor:  Color(0xFF6D52FF),\n    titleStyle: TextStyle(color: Color(0xFF6D52FF), fontWeight: FontWeight.w700),\n    decoration: BoxDecoration(\n      color:        Color(0x1A6D52FF),\n      borderRadius: BorderRadius.all(Radius.circular(8)),\n      border:       Border(left: BorderSide(color: Color(0xFF6D52FF), width: 3)),\n    ),\n  ),\n\n  // ... (ver tabla de propiedades abajo)\n);"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Propiedades del tema por grupo"
+        }
+      ],
+      "id": "propiedades-del-tema-por-grupo"
+    },
+    {
+      "type": "table",
+      "head": {
+        "type": "table_head",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Grupo"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Propiedad"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Tipo"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Descripción"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "body": {
+        "type": "table_body",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Layout"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "maxContentWidth"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "double"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Ancho máximo del documento"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Layout"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "blockSpacing"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "double"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Separación vertical entre bloques"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Layout"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "documentPadding"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "EdgeInsets"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Padding base del documento"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Body"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "bodyTextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Estilo de texto base"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Headings"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "h1TextStyle"
+                  },
+                  {
+                    "type": "text",
+                    "value": " … "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "h6TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Estilos por nivel"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Headings"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "headingPadding"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "EdgeInsets"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Padding de todos los encabezados"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Inline"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "boldTextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Overlay para negritas"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Inline"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "italicTextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Overlay para cursivas"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Inline"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "linkTextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Estilo de enlaces"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Inline"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "codeInlineTextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Estilo de código inline"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Inline"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "codeInlineDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "BoxDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Fondo del código inline"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Inline"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "footnoteRefTextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Superíndice de nota al pie"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Blockquote"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "blockquoteDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "BoxDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Borde/fondo del blockquote"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Blockquote"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "blockquoteTextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Texto dentro del blockquote"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Code block"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "codeBlockTextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Fuente monoespaciada"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Code block"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "codeBlockDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "BoxDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Fondo del bloque de código"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Code block"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "codeBlockHeaderDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "BoxDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Fondo de la cabecera del bloque"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Code block"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "codeBlockCopyIconColor"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "Color"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Color del botón de copiar"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "List"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "listMarkerTextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Estilo del marcador de lista"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "List"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "listBulletMarker"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "String"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Carácter del bullet (p. ej. "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "•"
+                  },
+                  {
+                    "type": "text",
+                    "value": ")"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Table"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "tableDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "BoxDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Borde de la tabla"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Table"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "tableHeaderTextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "TextStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Texto de la cabecera"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Table"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "tableInnerBorderSide"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "BorderSide"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Borde interno de celdas"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Image"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "imageBorderRadius"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "BorderRadius"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Redondeo de imágenes"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Image"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "imagePlaceholderDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "BoxDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Placeholder mientras carga"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Video"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "videoFrameDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "BoxDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Marco del vídeo"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Highlight"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "highlightTheme"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastHighlighter?"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Motor de resaltado (acepta cualquiera de los dos backends)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Callouts"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "calloutInfo"
+                  },
+                  {
+                    "type": "text",
+                    "value": " / "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "calloutWarn"
+                  },
+                  {
+                    "type": "text",
+                    "value": " / "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "calloutError"
+                  },
+                  {
+                    "type": "text",
+                    "value": " / "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "calloutSuccess"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastCalloutStyle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Record con "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "icon"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "iconColor"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "titleStyle"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "decoration"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Missing"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "missingRendererDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "BoxDecoration"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Fallback para nodos sin renderer"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Nodos de Bloque soportados"
+        }
+      ],
+      "id": "nodos-de-bloque-soportados"
+    },
+    {
+      "type": "table",
+      "head": {
+        "type": "table_head",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Tipo"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Propiedades clave"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "body": {
+        "type": "table_body",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "document"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  },
+                  {
+                    "type": "text",
+                    "value": " — raíz del árbol"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "heading"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "level"
+                  },
+                  {
+                    "type": "text",
+                    "value": " (1–6), "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "paragraph"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "blockquote"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "code_block"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "language?"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "filename?"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "value"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "list"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "ordered"
+                  },
+                  {
+                    "type": "text",
+                    "value": " (bool), "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "start?"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "list_item"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "checked?"
+                  },
+                  {
+                    "type": "text",
+                    "value": " (bool | null), "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "table"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "head"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "body"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "table_head"
+                  },
+                  {
+                    "type": "text",
+                    "value": " / "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "table_body"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "rows[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "table_row"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "cells[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "table_cell"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "is_header"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "align?"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "image"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "src"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "alt"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "title?"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "video"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "src"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "alt"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "title?"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "divider"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "— (sin propiedades)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "html_block"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "value"
+                  },
+                  {
+                    "type": "text",
+                    "value": " (HTML crudo como string)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "footnote_def"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "label"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "widget"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "widget"
+                  },
+                  {
+                    "type": "text",
+                    "value": " (nombre), "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "props{}"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "slots{}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Nodos Inline soportados"
+        }
+      ],
+      "id": "nodos-inline-soportados"
+    },
+    {
+      "type": "table",
+      "head": {
+        "type": "table_head",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Tipo"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Descripción"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "body": {
+        "type": "table_body",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "text"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Texto plano ("
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "value"
+                  },
+                  {
+                    "type": "text",
+                    "value": ")"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "bold"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "bold",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "Negrita"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "value": " — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "italic"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "italic",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "Cursiva"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "value": " — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "bold_italic"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "bold_italic",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "Negrita y cursiva"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "value": " — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "strikethrough"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "strikethrough",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "Tachado"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "value": " — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "underline"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Subrayado — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "code_inline"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "código"
+                  },
+                  {
+                    "type": "text",
+                    "value": " — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "value"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "link"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Enlace — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "href"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "title?"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "children[]"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "inline_image"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Imagen dentro de texto — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "src"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "alt"
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "title?"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "footnote_ref"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Referencia a nota al pie — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "label"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "softbreak"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Salto de línea suave"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "hardbreak"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Salto de línea forzado"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Renderers Personalizados"
+        }
+      ],
+      "id": "renderers-personalizados"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "BlockRenderer"
+        }
+      ],
+      "id": "blockrenderer"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Implementa "
+        },
+        {
+          "type": "code_inline",
+          "value": "BlockRenderer"
+        },
+        {
+          "type": "text",
+          "value": " para reemplazar o extender cualquier bloque:"
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "import 'package:markast/markast.dart';\n\nclass FancyHeadingNodeRenderer extends BlockRenderer {\n  const FancyHeadingNodeRenderer();\n\n  @override\n  String get type => NodeType.heading;  // tipo de nodo que maneja\n\n  @override\n  Widget build(RenderContext ctx, Map<String, dynamic> node) {\n    final level = (node['level'] as int?) ?? 1;\n    final style = ctx.theme.headingStyleFor(level);\n\n    // Renderiza los hijos inline con el estilo del encabezado\n    final spans = ctx.markast.buildInlines(\n      ctx,\n      node['children'] as List<dynamic>?,\n      style,\n    );\n    final heading = Text.rich(TextSpan(style: style, children: spans));\n\n    // H1 especial: barra de acento a la izquierda\n    if (level == 1) {\n      return Padding(\n        padding: ctx.theme.headingPadding,\n        child: Row(\n          crossAxisAlignment: CrossAxisAlignment.start,\n          children: [\n            Container(\n              width: 4,\n              height: style.fontSize ?? 32,\n              margin: const EdgeInsets.only(top: 6, right: 12),\n              decoration: BoxDecoration(\n                color: style.color ?? const Color(0xFF6D52FF),\n                borderRadius: BorderRadius.circular(2),\n              ),\n            ),\n            Expanded(child: heading),\n          ],\n        ),\n      );\n    }\n\n    return Padding(padding: ctx.theme.headingPadding, child: heading);\n  }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "WidgetNodeRenderer"
+        }
+      ],
+      "id": "widgetnoderenderer"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Para nodos "
+        },
+        {
+          "type": "code_inline",
+          "value": ":::nombre_widget"
+        },
+        {
+          "type": "text",
+          "value": " en el Markdown:"
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "class YoutubeWidgetRenderer extends WidgetNodeRenderer {\n  const YoutubeWidgetRenderer();\n\n  @override\n  String get name => 'youtube';  // coincide con :::youtube\n\n  @override\n  Widget build(\n    RenderContext ctx,\n    Map<String, dynamic> props,\n    Map<String, List<Map<String, dynamic>>> slots,\n  ) {\n    final id    = (props['id']    as String?) ?? '';\n    final title = props['title'] as String?;\n    final thumb = id.isEmpty\n        ? null\n        : 'https://i.ytimg.com/vi/$id/hqdefault.jpg';\n\n    return ClipRRect(\n      borderRadius: BorderRadius.circular(12),\n      child: ColoredBox(\n        color: const Color(0xFF1A1B25),\n        child: Column(\n          children: [\n            if (thumb != null)\n              AspectRatio(\n                aspectRatio: 16 / 9,\n                child: Image.network(thumb, fit: BoxFit.cover),\n              ),\n            if (title != null)\n              Padding(\n                padding: const EdgeInsets.all(12),\n                child: Text(title, style: ctx.theme.bodyTextStyle.copyWith(\n                  color: Colors.white,\n                  fontWeight: FontWeight.w600,\n                )),\n              ),\n          ],\n        ),\n      ),\n    );\n  }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "InlineRenderer"
+        }
+      ],
+      "id": "inlinerenderer"
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "class MiLinkRenderer extends InlineRenderer {\n  const MiLinkRenderer();\n\n  @override\n  String get type => NodeType.link;\n\n  @override\n  InlineSpan build(\n    RenderContext ctx,\n    Map<String, dynamic> node,\n    TextStyle style,\n  ) {\n    final href  = node['href'] as String? ?? '';\n    final spans = ctx.markast.buildInlines(\n      ctx,\n      node['children'] as List<dynamic>?,\n      style.merge(ctx.theme.linkTextStyle),\n    );\n    return TextSpan(\n      children:   spans,\n      recognizer: TapGestureRecognizer()\n        ..onTap = () => ctx.onLinkTap?.call(href, node['title'] as String?),\n    );\n  }\n}"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Resaltado de Sintaxis"
+        }
+      ],
+      "id": "resaltado-de-sintaxis"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "markast ofrece "
+        },
+        {
+          "type": "bold",
+          "children": [
+            {
+              "type": "text",
+              "value": "dos motores de resaltado intercambiables"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "value": " — eliges cuál usar al construir el tema. Ambos implementan la interfaz "
+        },
+        {
+          "type": "code_inline",
+          "value": "MarkastHighlighter"
+        },
+        {
+          "type": "text",
+          "value": ", por lo que el campo "
+        },
+        {
+          "type": "code_inline",
+          "value": "highlightTheme"
+        },
+        {
+          "type": "text",
+          "value": " los acepta indistintamente."
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "head": {
+        "type": "table_head",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Característica"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Motor A — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastHighlightTheme"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Motor B — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastTextMateHighlight"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "body": {
+        "type": "table_body",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Backend"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "re_highlight"
+                  },
+                  {
+                    "type": "text",
+                    "value": " (port de highlight.js)"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "syntax_highlight"
+                  },
+                  {
+                    "type": "text",
+                    "value": " (TextMate / VSCode)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Inicialización"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Síncrona (constructor)"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Async (factory "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "await create(...)"
+                  },
+                  {
+                    "type": "text",
+                    "value": ")"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Lenguajes"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "~190 (todos los de highlight.js)"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "15 (los más usados, calidad VSCode)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Calidad visual para Dart"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Mejorada con gramáticas custom"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "bold",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "Idéntica a VSCode"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Catálogo de temas"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastCodeThemes"
+                  },
+                  {
+                    "type": "text",
+                    "value": " (250+ temas)"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastTextMateThemes"
+                  },
+                  {
+                    "type": "text",
+                    "value": " (4 oficiales)"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Tamaño del bundle"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Bajo"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "+200 KB de gramáticas TextMate"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Plataformas"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Todas"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Todas"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "blockquote",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "value": "⚡ Los dos motores son "
+            },
+            {
+              "type": "bold",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "alternativas, no capas"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": ". Cada uno trae su propio catálogo de temas porque hablan vocabularios distintos: re_highlight usa scopes simples ("
+            },
+            {
+              "type": "code_inline",
+              "value": "keyword"
+            },
+            {
+              "type": "text",
+              "value": ", "
+            },
+            {
+              "type": "code_inline",
+              "value": "string"
+            },
+            {
+              "type": "text",
+              "value": "); TextMate usa scopes jerárquicos ("
+            },
+            {
+              "type": "code_inline",
+              "value": "keyword.control.dart"
+            },
+            {
+              "type": "text",
+              "value": ", "
+            },
+            {
+              "type": "code_inline",
+              "value": "string.quoted.double.dart"
+            },
+            {
+              "type": "text",
+              "value": "). Mezclarlos genera más fricción que valor."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Motor A — Por defecto, síncrono, cobertura amplia"
+        }
+      ],
+      "id": "motor-a-por-defecto-sincrono-cobertura-amplia"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Construido sobre "
+        },
+        {
+          "type": "code_inline",
+          "value": "re_highlight"
+        },
+        {
+          "type": "text",
+          "value": " con "
+        },
+        {
+          "type": "bold",
+          "children": [
+            {
+              "type": "text",
+              "value": "22 gramáticas mejoradas"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "value": " (Dart, Python, JS, TS, Go, Rust, Java, Kotlin, Swift, C#, C, C++, Ruby, PHP, SQL, Bash, YAML, JSON, Markdown, PlantUML, HTML, CSS) que usan recursión real para interpolación de strings, anotaciones y declaraciones de tipos. Para cualquier otro lenguaje cae al grammar built-in de re_highlight."
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "final tema = MarkastTheme(\n  // ... resto de propiedades ...\n  highlightTheme: MarkastHighlightTheme(\n    theme: MarkastCodeThemes.atomOneDark,\n  ),\n);"
+    },
+    {
+      "type": "heading",
+      "level": 4,
+      "children": [
+        {
+          "type": "text",
+          "value": "Temas recomendados (Motor A)"
+        }
+      ],
+      "id": "temas-recomendados-motor-a"
+    },
+    {
+      "type": "table",
+      "head": {
+        "type": "table_head",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Modo"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Tema"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Constante"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "body": {
+        "type": "table_body",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Oscuro"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Atom One Dark"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastCodeThemes.atomOneDark"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Oscuro"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Tokyo Night"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastCodeThemes.tokyoNightDark"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Oscuro"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Nord"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastCodeThemes.nord"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Oscuro"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Monokai"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastCodeThemes.monokai"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Claro"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "GitHub"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastCodeThemes.github"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Claro"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Atom One Light"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastCodeThemes.atomOneLight"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Claro"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Mexico Light"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastCodeThemes.base16.mexicoLight"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Claro"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Intellij Light"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastCodeThemes.intellijLight"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Los temas Base16 (175 variaciones) se acceden como "
+        },
+        {
+          "type": "code_inline",
+          "value": "MarkastCodeThemes.base16.dracula"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "MarkastCodeThemes.base16.solarizedDark"
+        },
+        {
+          "type": "text",
+          "value": ", etc."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Motor B — Calidad VSCode, async, 15 lenguajes"
+        }
+      ],
+      "id": "motor-b-calidad-vscode-async-15-lenguajes"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Usa los "
+        },
+        {
+          "type": "bold",
+          "children": [
+            {
+              "type": "text",
+              "value": "mismos archivos de gramática TextMate que VSCode"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "value": " y los temas oficiales ("
+        },
+        {
+          "type": "code_inline",
+          "value": "Dark+"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "Light+"
+        },
+        {
+          "type": "text",
+          "value": ", etc.). Requiere bootstrap async una sola vez antes de "
+        },
+        {
+          "type": "code_inline",
+          "value": "runApp"
+        },
+        {
+          "type": "text",
+          "value": " — después es síncrono."
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "import 'package:flutter/material.dart';\nimport 'package:markast/markast.dart';\n\nvoid main() async {\n  WidgetsFlutterBinding.ensureInitialized();\n\n  // 1. Carga el tema TextMate (async).\n  final tmTheme = await MarkastTextMateThemes.darkPlus();\n\n  // 2. Inicializa el motor con todas las gramáticas (async).\n  final highlighter = await MarkastTextMateHighlight.create(theme: tmTheme);\n\n  runApp(MyApp(highlighter: highlighter));\n}\n\nclass MyApp extends StatelessWidget {\n  const MyApp({super.key, required this.highlighter});\n  final MarkastHighlighter highlighter;\n\n  @override\n  Widget build(BuildContext context) {\n    final markast = Markast(\n      themeModifier: (base) => base.copyWith(highlightTheme: highlighter),\n    );\n    // ... pasa `markast` al árbol de widgets como siempre.\n    return MaterialApp(/* ... */);\n  }\n}"
+    },
+    {
+      "type": "heading",
+      "level": 4,
+      "children": [
+        {
+          "type": "text",
+          "value": "Lenguajes soportados (Motor B)"
+        }
+      ],
+      "id": "lenguajes-soportados-motor-b"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "code_inline",
+          "value": "css"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "dart"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "go"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "html"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "java"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "javascript"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "json"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "kotlin"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "python"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "rust"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "sql"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "swift"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "typescript"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "yaml"
+        },
+        {
+          "type": "text",
+          "value": ", "
+        },
+        {
+          "type": "code_inline",
+          "value": "serverpod_protocol"
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Para un lenguaje fuera de esta lista, el code block cae a texto plano (no hay fallback automático al Motor A — son alternativas)."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 4,
+      "children": [
+        {
+          "type": "text",
+          "value": "Temas (Motor B)"
+        }
+      ],
+      "id": "temas-motor-b"
+    },
+    {
+      "type": "table",
+      "head": {
+        "type": "table_head",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Tema"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Constructor"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Estilo"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "body": {
+        "type": "table_body",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Dark+"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "await MarkastTextMateThemes.darkPlus()"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "VSCode dark default"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Dark Visual Studio"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "await MarkastTextMateThemes.darkVs()"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Visual Studio clásico"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Light+"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "await MarkastTextMateThemes.lightPlus()"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "VSCode light default"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Light Visual Studio"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "await MarkastTextMateThemes.lightVs()"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Visual Studio clásico"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Auto por brightness"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "await MarkastTextMateThemes.forBrightness(b)"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Picks dark/light según "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "Brightness"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Custom"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "await MarkastTextMateThemes.merged([...], defaultStyle: ...)"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Compón JSONs propios"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "MarkastCodeBlock — widget standalone"
+        }
+      ],
+      "id": "markastcodeblock-widget-standalone"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Si solo quieres un bloque de código fuera del flujo de Markdown, usa el widget directamente. Acepta cualquiera de los dos motores vía "
+        },
+        {
+          "type": "code_inline",
+          "value": "theme.highlightTheme"
+        },
+        {
+          "type": "text",
+          "value": ":"
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "MarkastCodeBlock(\n  code: '''\n@override\nWidget build(BuildContext context) {\n  return Text('Hola, \\$name!');\n}\n''',\n  language: 'dart',\n  filename: 'main.dart',          // opcional\n  // theme: tema,                  // opcional — usa Theme.of(context) si null\n  // onCopy: (code) { ... },       // opcional — fallback a Clipboard.setData\n)"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Uso directo del motor en otros widgets"
+        }
+      ],
+      "id": "uso-directo-del-motor-en-otros-widgets"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "code_inline",
+          "value": "MarkastHighlighter.highlight(...)"
+        },
+        {
+          "type": "text",
+          "value": " retorna un "
+        },
+        {
+          "type": "code_inline",
+          "value": "TextSpan?"
+        },
+        {
+          "type": "text",
+          "value": ". Puedes consumirlo desde cualquier widget tuyo:"
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "final span = highlighter.highlight(code, 'rust', baseStyle);\nreturn Text.rich(span ?? TextSpan(text: code, style: baseStyle));"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Callouts"
+        }
+      ],
+      "id": "callouts"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Los callouts son widgets built-in. En Markdown se escriben como contenedores custom:"
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "",
+      "value": ":::callout level=info title=\"Título del callout\"\nContenido del callout con **Markdown** completo adentro.\n:::"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Cuatro niveles disponibles:"
+        }
+      ]
+    },
+    {
+      "type": "widget",
+      "widget": "callout",
+      "props": {
+        "level": "info",
+        "title": "INFO — Información general"
+      },
+      "slots": {
+        "default": [
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "value": "Un callout informativo para orientar al usuario. Admite "
+              },
+              {
+                "type": "bold",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "negritas"
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "value": ", "
+              },
+              {
+                "type": "italic",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "cursivas"
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "value": ", "
+              },
+              {
+                "type": "code_inline",
+                "value": "código"
+              },
+              {
+                "type": "text",
+                "value": ", listas y cualquier otro bloque de markast."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "widget",
+      "widget": "callout",
+      "props": {
+        "level": "warn",
+        "title": "WARN — Advertencia"
+      },
+      "slots": {
+        "default": [
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "value": "Algo puede salir mal. "
+              },
+              {
+                "type": "strikethrough",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "No ignores esto"
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "value": ". Revisa la configuración antes de continuar o podrías obtener un comportamiento inesperado."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "widget",
+      "widget": "callout",
+      "props": {
+        "level": "error",
+        "title": "ERROR — Acción crítica"
+      },
+      "slots": {
+        "default": [
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "value": "Esta operación es "
+              },
+              {
+                "type": "bold",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "irreversible"
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "value": ". Asegúrate de haber realizado una copia de seguridad completa antes de proceder."
+              }
+            ]
+          },
+          {
+            "type": "code_block",
+            "language": "dart",
+            "value": "// Siempre verifica antes de destruir datos\nassert(backup.exists, 'No hay backup disponible');"
+          }
+        ]
+      }
+    },
+    {
+      "type": "widget",
+      "widget": "callout",
+      "props": {
+        "level": "success",
+        "title": "SUCCESS — Operación completada"
+      },
+      "slots": {
+        "default": [
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "value": "El documento se generó correctamente y fue renderizado en Flutter sin errores de compilación ni warnings de análisis estático."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Callout con contenido rico"
+        }
+      ],
+      "id": "callout-con-contenido-rico"
+    },
+    {
+      "type": "widget",
+      "widget": "callout",
+      "props": {
+        "level": "info",
+        "title": "Anatomía de un MarkastTheme"
+      },
+      "slots": {
+        "default": [
+          {
+            "type": "paragraph",
+            "children": [
+              {
+                "type": "text",
+                "value": "El tema se compone de 5 grupos:"
+              }
+            ]
+          },
+          {
+            "type": "list",
+            "ordered": true,
+            "children": [
+              {
+                "type": "list_item",
+                "children": [
+                  {
+                    "type": "bold",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "Layout"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "value": " — dimensiones y espaciado del documento"
+                  }
+                ]
+              },
+              {
+                "type": "list_item",
+                "children": [
+                  {
+                    "type": "bold",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "Tipografía"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "value": " — estilos para cada nivel de encabezado, cuerpo e inline"
+                  }
+                ]
+              },
+              {
+                "type": "list_item",
+                "children": [
+                  {
+                    "type": "bold",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "Componentes"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "value": " — blockquote, code block, table, image, video"
+                  }
+                ]
+              },
+              {
+                "type": "list_item",
+                "children": [
+                  {
+                    "type": "bold",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "Callouts"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "value": " — "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "MarkastCalloutStyle"
+                  },
+                  {
+                    "type": "text",
+                    "value": " (record con icon, iconColor, titleStyle, decoration)"
+                  }
+                ]
+              },
+              {
+                "type": "list_item",
+                "children": [
+                  {
+                    "type": "bold",
+                    "children": [
+                      {
+                        "type": "text",
+                        "value": "Highlight"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "text",
+                    "value": " — tema de colores para resaltado de sintaxis"
+                  }
+                ]
+              }
+            ],
+            "start": 1
+          },
+          {
+            "type": "blockquote",
+            "children": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Todos los valores son primitivas Flutter puras — no hay ninguna capa de abstracción propietaria."
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Carga desde Assets"
+        }
+      ],
+      "id": "carga-desde-assets"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "1. Declara el asset en "
+        },
+        {
+          "type": "code_inline",
+          "value": "pubspec.yaml"
+        }
+      ],
+      "id": "1-declara-el-asset-en-pubspecyaml"
+    },
+    {
+      "type": "code_block",
+      "language": "yaml",
+      "value": "flutter:\n  uses-material-design: true\n  assets:\n    - assets/document.json"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "2. Genera el JSON desde Markdown (Python CLI)"
+        }
+      ],
+      "id": "2-genera-el-json-desde-markdown-python-cli"
+    },
+    {
+      "type": "code_block",
+      "language": "bash",
+      "value": "markast parse markast_flutter.md -f json -o assets/document.json"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "3. Cárgalo en Flutter"
+        }
+      ],
+      "id": "3-cargalo-en-flutter"
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "import 'dart:convert';\nimport 'package:flutter/services.dart';\n\nFuture<Map<String, dynamic>> loadDocument(String assetPath) async {\n  final raw = await rootBundle.loadString(assetPath);\n  return jsonDecode(raw) as Map<String, dynamic>;\n}"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "4. Renderízalo con "
+        },
+        {
+          "type": "code_inline",
+          "value": "FutureBuilder"
+        }
+      ],
+      "id": "4-renderizalo-con-futurebuilder"
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "FutureBuilder<Map<String, dynamic>>(\n  future: loadDocument('assets/document.json'),\n  builder: (context, snapshot) {\n    if (snapshot.connectionState != ConnectionState.done) {\n      return const Center(child: CircularProgressIndicator());\n    }\n    if (snapshot.hasError) {\n      return Center(child: Text('Error: ${snapshot.error}'));\n    }\n    return SingleChildScrollView(\n      child: markast.buildDocument(context, snapshot.data!),\n    );\n  },\n)"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Widget YouTube — Demo en Vivo"
+        }
+      ],
+      "id": "widget-youtube-demo-en-vivo"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "El widget "
+        },
+        {
+          "type": "code_inline",
+          "value": "YoutubeWidgetRenderer"
+        },
+        {
+          "type": "text",
+          "value": " registrado en este ejemplo renderiza una miniatura interactiva con el botón de reproducción. En Markdown:"
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "",
+      "value": ":::youtube id=dQw4w9WgXcQ title=\"Rick Astley — Never Gonna Give You Up\"\n:::"
+    },
+    {
+      "type": "widget",
+      "widget": "youtube",
+      "props": {
+        "id": "dQw4w9WgXcQ",
+        "title": "Rick Astley — Never Gonna Give You Up"
+      },
+      "slots": {
+        "default": []
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Resolución del Tema"
+        }
+      ],
+      "id": "resolucion-del-tema"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "code_inline",
+          "value": "Markast.resolveTheme(context)"
+        },
+        {
+          "type": "text",
+          "value": " sigue este orden de prioridad:"
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": true,
+      "children": [
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "bold",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Tema explícito"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": " pasado en "
+            },
+            {
+              "type": "code_inline",
+              "value": "Markast(theme: ...)"
+            },
+            {
+              "type": "text",
+              "value": " — siempre gana"
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "bold",
+              "children": [
+                {
+                  "type": "code_inline",
+                  "value": "MarkastThemeModifier"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": " aplicado sobre el tema base"
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "bold",
+              "children": [
+                {
+                  "type": "code_inline",
+                  "value": "Theme.of(context).extension<MarkastTheme>()"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": " — tema inyectado vía MaterialApp"
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "bold",
+              "children": [
+                {
+                  "type": "code_inline",
+                  "value": "MarkastTheme.fromTheme(Theme.of(context))"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": " — derivado automáticamente del "
+            },
+            {
+              "type": "code_inline",
+              "value": "ThemeData"
+            }
+          ]
+        }
+      ],
+      "start": 1
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Estructura del AST JSON"
+        }
+      ],
+      "id": "estructura-del-ast-json"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Raíz del documento"
+        }
+      ],
+      "id": "raiz-del-documento"
+    },
+    {
+      "type": "code_block",
+      "language": "json",
+      "value": "{\n  \"type\": \"document\",\n  \"version\": \"1.0\",\n  \"warnings\": [],\n  \"children\": [...],\n  \"meta\": {}\n}"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Encabezado (nivel 2)"
+        }
+      ],
+      "id": "encabezado-nivel-2"
+    },
+    {
+      "type": "code_block",
+      "language": "json",
+      "value": "{\n  \"type\": \"heading\",\n  \"level\": 2,\n  \"children\": [\n    { \"type\": \"text\", \"value\": \"Título de sección\" }\n  ]\n}"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Párrafo con inline mixto"
+        }
+      ],
+      "id": "parrafo-con-inline-mixto"
+    },
+    {
+      "type": "code_block",
+      "language": "json",
+      "value": "{\n  \"type\": \"paragraph\",\n  \"children\": [\n    { \"type\": \"text\",  \"value\": \"Texto con \" },\n    {\n      \"type\": \"bold\",\n      \"children\": [{ \"type\": \"text\", \"value\": \"negrita\" }]\n    },\n    { \"type\": \"text\",  \"value\": \" y \" },\n    { \"type\": \"code_inline\", \"value\": \"código\" },\n    { \"type\": \"text\",  \"value\": \".\" }\n  ]\n}"
+    },
+    {
+      "type": "heading",
+      "level": 3,
+      "children": [
+        {
+          "type": "text",
+          "value": "Widget callout"
+        }
+      ],
+      "id": "widget-callout"
+    },
+    {
+      "type": "code_block",
+      "language": "json",
+      "value": "{\n  \"type\":   \"widget\",\n  \"widget\": \"callout\",\n  \"props\":  { \"level\": \"info\", \"title\": \"INFORMACIÓN\" },\n  \"slots\": {\n    \"default\": [\n      {\n        \"type\": \"paragraph\",\n        \"children\": [{ \"type\": \"text\", \"value\": \"Contenido.\" }]\n      }\n    ]\n  }\n}"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Diagnósticos y Advertencias"
+        }
+      ],
+      "id": "diagnosticos-y-advertencias"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "El parser Python emite diagnósticos sin lanzar excepciones. Cada entrada tiene:"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "head": {
+        "type": "table_head",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Campo"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Tipo"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Descripción"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "body": {
+        "type": "table_body",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "code"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "string"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Código de advertencia (p. ej. "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "W007"
+                  },
+                  {
+                    "type": "text",
+                    "value": ")"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "message"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "string"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Descripción del problema"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "context"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "string"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Texto del nodo afectado"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "severity"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "string"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "code_inline",
+                    "value": "\"error\""
+                  },
+                  {
+                    "type": "text",
+                    "value": ", "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "\"warning\""
+                  },
+                  {
+                    "type": "text",
+                    "value": " o "
+                  },
+                  {
+                    "type": "code_inline",
+                    "value": "\"info\""
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Imagen de Ejemplo"
+        }
+      ],
+      "id": "imagen-de-ejemplo"
+    },
+    {
+      "type": "image",
+      "src": "https://picsum.photos/seed/markast/800/300",
+      "alt": "markast Flutter — arquitectura del sistema",
+      "title": "Diagrama conceptual: Markdown → AST JSON → Flutter Widgets"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Comparación con Alternativas"
+        }
+      ],
+      "id": "comparacion-con-alternativas"
+    },
+    {
+      "type": "table",
+      "head": {
+        "type": "table_head",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Característica"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "markast"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "flutter_markdown"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": true,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "markdown_widget"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "body": {
+        "type": "table_body",
+        "rows": [
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Renderizado nativo"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Tema completo por prop"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Parcial"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Parcial"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Soporte de AST JSON"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "❌"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "❌"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Widgets personalizados"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "❌"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "❌"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Resaltado de sintaxis"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅ (250+ temas + opt-in TextMate calidad VSCode)"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "❌"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Footnotes"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "❌"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "❌"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "table_row",
+            "cells": [
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "Sin HTML / WebView"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅"
+                  }
+                ]
+              },
+              {
+                "type": "table_cell",
+                "is_header": false,
+                "align": null,
+                "children": [
+                  {
+                    "type": "text",
+                    "value": "✅"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "heading",
+      "level": 2,
+      "children": [
+        {
+          "type": "text",
+          "value": "Preguntas Frecuentes"
+        }
+      ],
+      "id": "preguntas-frecuentes"
+    },
+    {
+      "type": "heading",
+      "level": 6,
+      "children": [
+        {
+          "type": "text",
+          "value": "¿Puedo usar markast sin el parser Python?"
+        }
+      ],
+      "id": "puedo-usar-markast-sin-el-parser-python"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Sí. La librería Flutter consume un "
+        },
+        {
+          "type": "code_inline",
+          "value": "Map<String, dynamic>"
+        },
+        {
+          "type": "text",
+          "value": " estándar. Puedes construir el AST manualmente, generarlo desde otro parser o cargarlo desde cualquier API REST que devuelva el formato correcto."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 6,
+      "children": [
+        {
+          "type": "text",
+          "value": "¿Cómo agrego soporte para un tipo de nodo nuevo?"
+        }
+      ],
+      "id": "como-agrego-soporte-para-un-tipo-de-nodo-nuevo"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Implementa "
+        },
+        {
+          "type": "code_inline",
+          "value": "BlockRenderer"
+        },
+        {
+          "type": "text",
+          "value": " o "
+        },
+        {
+          "type": "code_inline",
+          "value": "InlineRenderer"
+        },
+        {
+          "type": "text",
+          "value": " y regístralo con "
+        },
+        {
+          "type": "code_inline",
+          "value": "markast.registerBlock(...)"
+        },
+        {
+          "type": "text",
+          "value": " o "
+        },
+        {
+          "type": "code_inline",
+          "value": "markast.registerInline(...)"
+        },
+        {
+          "type": "text",
+          "value": ". El registro reemplaza cualquier renderer existente para ese tipo."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 6,
+      "children": [
+        {
+          "type": "text",
+          "value": "¿El tema cambia automáticamente con el modo oscuro?"
+        }
+      ],
+      "id": "el-tema-cambia-automaticamente-con-el-modo-oscuro"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Sí, si usas "
+        },
+        {
+          "type": "code_inline",
+          "value": "MarkastTheme.fromTheme(Theme.of(context))"
+        },
+        {
+          "type": "text",
+          "value": " o derivás el tema en "
+        },
+        {
+          "type": "code_inline",
+          "value": "buildDocument"
+        },
+        {
+          "type": "text",
+          "value": ". Para un control total, detecta "
+        },
+        {
+          "type": "code_inline",
+          "value": "Theme.of(context).brightness"
+        },
+        {
+          "type": "text",
+          "value": " y elige entre dos instancias de "
+        },
+        {
+          "type": "code_inline",
+          "value": "MarkastTheme"
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 6,
+      "children": [
+        {
+          "type": "text",
+          "value": "¿Cuándo conviene cambiar al motor TextMate (Motor B)?"
+        }
+      ],
+      "id": "cuando-conviene-cambiar-al-motor-textmate-motor-b"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Cuándo:"
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "children": [
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "text",
+              "value": "Tu documentación incluye Dart, Python, JavaScript/TypeScript, Go, Rust, SQL o YAML, "
+            },
+            {
+              "type": "bold",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "y"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "value": " te importa que el highlighting sea visualmente equivalente a lo que tus usuarios ven en VSCode."
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "text",
+              "value": "Estás dispuesto a hacer un "
+            },
+            {
+              "type": "code_inline",
+              "value": "await"
+            },
+            {
+              "type": "text",
+              "value": " al arrancar la app (no es bloqueante para el resto del bootstrap si lo lanzas en paralelo con otras inicializaciones)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Cuándo no:"
+        }
+      ]
+    },
+    {
+      "type": "list",
+      "ordered": false,
+      "children": [
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "text",
+              "value": "Necesitas un lenguaje que no está en la lista de 15 (PowerShell, F#, Lua, Haskell, Elixir, …)."
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "text",
+              "value": "Tu app debe arrancar 100 % síncrona y no puedes introducir un await."
+            }
+          ]
+        },
+        {
+          "type": "list_item",
+          "children": [
+            {
+              "type": "text",
+              "value": "El peso del bundle (+200 KB de gramáticas TextMate) es un constraint duro."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "level": 6,
+      "children": [
+        {
+          "type": "text",
+          "value": "¿Cómo habilito la selección de texto?"
+        }
+      ],
+      "id": "como-habilito-la-seleccion-de-texto"
+    },
+    {
+      "type": "paragraph",
+      "children": [
+        {
+          "type": "text",
+          "value": "Envuelve el widget resultado en un "
+        },
+        {
+          "type": "code_inline",
+          "value": "SelectionArea"
+        },
+        {
+          "type": "text",
+          "value": ":"
+        }
+      ]
+    },
+    {
+      "type": "code_block",
+      "language": "dart",
+      "value": "SelectionArea(\n  child: markast.buildDocument(context, ast),\n)"
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "footnote_def",
+      "label": "1",
+      "children": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "value": "El parser de Markdown está implementado en Python y genera el AST JSON. La librería Flutter sólo consume ese JSON — no incluye ningún parser de Markdown propio."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
