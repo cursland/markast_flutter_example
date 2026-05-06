@@ -179,7 +179,7 @@ packages:
   markast:
     dependency: "direct main"
     description:
-      path: "../markast_flutter"
+      path: "../flutter_markast"
       relative: true
     source: path
     version: "0.0.1"

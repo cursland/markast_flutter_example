@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   markast:
-    path: ../markast_flutter
+    path: ../flutter_markast
   url_launcher: ^6.3.1
   # Direct dep so Flutter bundles syntax_highlight's grammar / theme JSON
   # assets — transitive bundling via the path-imported `markast` package is
